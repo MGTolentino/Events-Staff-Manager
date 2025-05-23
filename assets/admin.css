@@ -79,8 +79,10 @@
 }
 
 .select2-container--default .select2-selection--multiple .select2-selection__placeholder {
-    margin-top: 4px;
+    margin-top: 6px;
+    margin-bottom: 4px;
     color: #666;
+    line-height: 1.2;
 }
 
 .esm-select-container {
