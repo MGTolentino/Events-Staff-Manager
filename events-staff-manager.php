@@ -3,7 +3,7 @@
  * Plugin Name: Events Staff Manager
  * Description: Gestiona las funcionalidades de los ejecutivos de ventas para filtrar leads por ciudad y categoría
  * Version: 1.0.0
- * Author: Tu Nombre
+ * Author: Miguel Tolentino
  */
 
 if (!defined('ABSPATH')) {
