@@ -1,0 +1,111 @@
+.esm-container {
+    margin-top: 20px;
+}
+
+.esm-container .wp-list-table th,
+.esm-container .wp-list-table td {
+    vertical-align: top;
+    padding: 15px 10px;
+}
+
+.esm-current-selection {
+    margin-top: 8px;
+    padding: 5px;
+    background-color: #f1f1f1;
+    border-radius: 3px;
+}
+
+.esm-save-status {
+    margin-left: 10px;
+}
+
+.esm-save-status.success {
+    color: #46b450;
+    font-weight: bold;
+}
+
+.esm-save-status.error {
+    color: #dc3232;
+    font-weight: bold;
+}
+
+.esm-info-box {
+    margin-top: 30px;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.esm-info-box h3 {
+    margin-top: 0;
+}
+
+.esm-info-box details {
+    margin-top: 10px;
+}
+
+.esm-info-box summary {
+    cursor: pointer;
+    font-weight: bold;
+    color: #0073aa;
+}
+
+.esm-info-box ul {
+    max-height: 200px;
+    overflow-y: auto;
+    columns: 3;
+    column-gap: 20px;
+}
+
+.esm-info-box li {
+    break-inside: avoid;
+    margin-bottom: 5px;
+}
+
+.select2-container {
+    z-index: 999999;
+}
+
+.button.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+@media (max-width: 768px) {
+    .esm-container .wp-list-table,
+    .esm-container .wp-list-table tbody,
+    .esm-container .wp-list-table th,
+    .esm-container .wp-list-table td,
+    .esm-container .wp-list-table tr {
+        display: block;
+    }
+    
+    .esm-container .wp-list-table thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+    
+    .esm-container .wp-list-table tr {
+        border: 1px solid #ccc;
+        margin-bottom: 10px;
+        padding: 10px;
+    }
+    
+    .esm-container .wp-list-table td {
+        border: none;
+        position: relative;
+        padding-left: 50%;
+    }
+    
+    .esm-container .wp-list-table td:before {
+        content: attr(data-label);
+        position: absolute;
+        left: 6px;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        font-weight: bold;
+    }
+}
