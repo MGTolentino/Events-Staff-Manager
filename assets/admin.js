@@ -3,7 +3,8 @@ jQuery(document).ready(function($) {
     $('.esm-cities-select, .esm-categories-select').select2({
         placeholder: 'Seleccionar opciones...',
         allowClear: true,
-        closeOnSelect: false
+        closeOnSelect: false,
+        width: '100%'
     });
     
     $('.esm-save-restrictions').on('click', function() {
@@ -74,6 +75,26 @@ jQuery(document).ready(function($) {
         
         saveButton.addClass('button-primary').removeClass('button-secondary');
         statusSpan.removeClass('success error').text('');
+    });
+    
+    $('.esm-select-all').on('click', function() {
+        var target = $(this).data('target');
+        var userId = $(this).data('user-id');
+        var row = $(this).closest('tr');
+        var select = row.find('.esm-' + target + '-select');
+        
+        select.find('option').prop('selected', true);
+        select.trigger('change');
+    });
+    
+    $('.esm-clear-all').on('click', function() {
+        var target = $(this).data('target');
+        var userId = $(this).data('user-id');
+        var row = $(this).closest('tr');
+        var select = row.find('.esm-' + target + '-select');
+        
+        select.val(null);
+        select.trigger('change');
     });
     
     $('details summary').on('click', function() {

@@ -86,7 +86,7 @@ class Events_Staff_Manager {
     public function filter_leads_query($where, $query) {
         global $wpdb;
         
-        if (!$this->should_filter_query($query)) {
+        if (!$this->should_filter_query()) {
             return $where;
         }
         
@@ -128,22 +128,26 @@ class Events_Staff_Manager {
         return $where;
     }
     
-    private function should_filter_query($query) {
-        global $wpdb;
-        
+    private function should_filter_query() {
         if (is_admin()) {
             return false;
         }
         
-        if (!is_main_query()) {
+        if (defined('DOING_AJAX') && DOING_AJAX) {
+            $action = isset($_POST['action']) ? $_POST['action'] : '';
+            if (in_array($action, array('filter_leads', 'get_pipeline_data'))) {
+                return true;
+            }
             return false;
         }
         
-        if (strpos($wpdb->last_query, 'jet_cct_leads') === false) {
-            return false;
+        $current_url = $_SERVER['REQUEST_URI'];
+        if (strpos($current_url, '/leads/') !== false && 
+            strpos($current_url, '/lead-details/') === false) {
+            return true;
         }
         
-        return true;
+        return false;
     }
     
     public function get_sales_executives() {
@@ -166,7 +170,40 @@ class Events_Staff_Manager {
             ORDER BY ubicacion_evento
         ");
         
-        return array_filter($cities);
+        $taxonomy_cities = $this->get_taxonomy_cities();
+        
+        $all_cities = array_merge($cities, $taxonomy_cities);
+        $all_cities = array_unique(array_filter($all_cities));
+        sort($all_cities);
+        
+        return $all_cities;
+    }
+    
+    private function get_taxonomy_cities() {
+        $cities = array();
+        
+        $terms = get_terms(array(
+            'taxonomy' => 'hp_listing_ubicacion',
+            'hide_empty' => false
+        ));
+        
+        if (!is_wp_error($terms)) {
+            foreach ($terms as $term) {
+                $cities[] = $term->name;
+                
+                $children = get_term_children($term->term_id, 'hp_listing_ubicacion');
+                if (!is_wp_error($children)) {
+                    foreach ($children as $child_id) {
+                        $child_term = get_term($child_id, 'hp_listing_ubicacion');
+                        if ($child_term && !is_wp_error($child_term)) {
+                            $cities[] = $child_term->name;
+                        }
+                    }
+                }
+            }
+        }
+        
+        return $cities;
     }
     
     public function get_available_categories() {

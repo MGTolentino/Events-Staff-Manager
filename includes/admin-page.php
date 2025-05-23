@@ -46,8 +46,15 @@ $available_categories = $esm->get_available_categories();
                             </td>
                             <td><?php echo esc_html($user->user_email); ?></td>
                             <td>
+                                <div class="esm-select-container">
+                                    <button type="button" class="button button-secondary esm-select-all" data-target="cities" data-user-id="<?php echo $user->ID; ?>">
+                                        Seleccionar todas
+                                    </button>
+                                    <button type="button" class="button button-secondary esm-clear-all" data-target="cities" data-user-id="<?php echo $user->ID; ?>">
+                                        Limpiar
+                                    </button>
+                                </div>
                                 <select name="cities[]" class="esm-cities-select" multiple="multiple" style="width: 100%;">
-                                    <option value="">Todas las ciudades</option>
                                     <?php foreach ($available_cities as $city): ?>
                                         <option value="<?php echo esc_attr($city); ?>" 
                                                 <?php selected(in_array($city, $allowed_cities)); ?>>
@@ -69,8 +76,15 @@ $available_categories = $esm->get_available_categories();
                                 </div>
                             </td>
                             <td>
+                                <div class="esm-select-container">
+                                    <button type="button" class="button button-secondary esm-select-all" data-target="categories" data-user-id="<?php echo $user->ID; ?>">
+                                        Seleccionar todas
+                                    </button>
+                                    <button type="button" class="button button-secondary esm-clear-all" data-target="categories" data-user-id="<?php echo $user->ID; ?>">
+                                        Limpiar
+                                    </button>
+                                </div>
                                 <select name="categories[]" class="esm-categories-select" multiple="multiple" style="width: 100%;">
-                                    <option value="">Todas las categorías</option>
                                     <?php foreach ($available_categories as $category): ?>
                                         <option value="<?php echo esc_attr($category); ?>" 
                                                 <?php selected(in_array($category, $allowed_categories)); ?>>
