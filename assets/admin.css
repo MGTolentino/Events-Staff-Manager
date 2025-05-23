@@ -85,6 +85,14 @@
     line-height: 1.2;
 }
 
+.select2-container--default .select2-search--inline .select2-search__field {
+    margin-top: 2px !important;
+    margin-bottom: 2px !important;
+    padding: 2px 4px !important;
+    line-height: 1.2 !important;
+    min-height: 20px !important;
+}
+
 .esm-select-container {
     margin-bottom: 8px;
     display: flex;

@@ -23,7 +23,8 @@ class Events_Staff_Manager {
         add_action('admin_menu', array($this, 'add_admin_menu'));
         add_action('admin_enqueue_scripts', array($this, 'admin_scripts'));
         add_action('wp_ajax_esm_save_user_restrictions', array($this, 'save_user_restrictions'));
-        add_filter('posts_where', array($this, 'filter_leads_query'), 10, 2);
+        add_filter('ltb_leads_query_where', array($this, 'filter_leads_query'), 10, 2);
+        add_filter('ltb_leads_query_args', array($this, 'add_user_restrictions_to_args'), 10, 1);
         add_action('wp_enqueue_scripts', array($this, 'frontend_scripts'));
     }
     
@@ -83,18 +84,13 @@ class Events_Staff_Manager {
         wp_send_json_success('Restricciones guardadas correctamente');
     }
     
-    public function filter_leads_query($where, $query) {
+    public function filter_leads_query($where, $args) {
+        if (!$this->should_apply_user_restrictions()) {
+            return $where;
+        }
+        
         global $wpdb;
-        
-        if (!$this->should_filter_query()) {
-            return $where;
-        }
-        
         $current_user = wp_get_current_user();
-        
-        if (!in_array('ejecutivo_de_ventas', $current_user->roles)) {
-            return $where;
-        }
         
         $allowed_cities = get_user_meta($current_user->ID, 'esm_allowed_cities', true);
         $allowed_categories = get_user_meta($current_user->ID, 'esm_allowed_categories', true);
@@ -108,7 +104,7 @@ class Events_Staff_Manager {
         if (!empty($allowed_cities)) {
             $cities_placeholders = implode(',', array_fill(0, count($allowed_cities), '%s'));
             $additional_where[] = $wpdb->prepare(
-                "EXISTS (SELECT 1 FROM {$wpdb->prefix}jet_cct_eventos e WHERE e.lead_id = {$wpdb->prefix}jet_cct_leads._ID AND e.ubicacion_evento IN ($cities_placeholders))",
+                "EXISTS (SELECT 1 FROM {$wpdb->prefix}jet_cct_eventos e WHERE e.lead_id = l._ID AND e.ubicacion_evento IN ($cities_placeholders))",
                 $allowed_cities
             );
         }
@@ -116,7 +112,7 @@ class Events_Staff_Manager {
         if (!empty($allowed_categories)) {
             $categories_placeholders = implode(',', array_fill(0, count($allowed_categories), '%s'));
             $additional_where[] = $wpdb->prepare(
-                "EXISTS (SELECT 1 FROM {$wpdb->prefix}jet_cct_eventos e WHERE e.lead_id = {$wpdb->prefix}jet_cct_leads._ID AND e.categoria_listing_post IN ($categories_placeholders))",
+                "EXISTS (SELECT 1 FROM {$wpdb->prefix}jet_cct_eventos e WHERE e.lead_id = l._ID AND e.categoria_listing_post IN ($categories_placeholders))",
                 $allowed_categories
             );
         }
@@ -128,26 +124,30 @@ class Events_Staff_Manager {
         return $where;
     }
     
-    private function should_filter_query() {
+    public function add_user_restrictions_to_args($args) {
+        if (!$this->should_apply_user_restrictions()) {
+            return $args;
+        }
+        
+        $current_user = wp_get_current_user();
+        $args['esm_user_id'] = $current_user->ID;
+        $args['esm_cities'] = get_user_meta($current_user->ID, 'esm_allowed_cities', true);
+        $args['esm_categories'] = get_user_meta($current_user->ID, 'esm_allowed_categories', true);
+        
+        return $args;
+    }
+    
+    private function should_apply_user_restrictions() {
         if (is_admin()) {
             return false;
         }
         
-        if (defined('DOING_AJAX') && DOING_AJAX) {
-            $action = isset($_POST['action']) ? $_POST['action'] : '';
-            if (in_array($action, array('filter_leads', 'get_pipeline_data'))) {
-                return true;
-            }
+        $current_user = wp_get_current_user();
+        if (!in_array('ejecutivo_de_ventas', $current_user->roles)) {
             return false;
         }
         
-        $current_url = $_SERVER['REQUEST_URI'];
-        if (strpos($current_url, '/leads/') !== false && 
-            strpos($current_url, '/lead-details/') === false) {
-            return true;
-        }
-        
-        return false;
+        return true;
     }
     
     public function get_sales_executives() {
