@@ -25,6 +25,7 @@ class Events_Staff_Manager {
         add_action('wp_ajax_esm_save_user_restrictions', array($this, 'save_user_restrictions'));
         add_filter('ltb_leads_query_where', array($this, 'filter_leads_query'), 10, 2);
         add_filter('ltb_leads_query_args', array($this, 'add_user_restrictions_to_args'), 10, 1);
+        add_action('wp_ajax_esm_debug_restrictions', array($this, 'debug_user_restrictions'));
         add_action('wp_enqueue_scripts', array($this, 'frontend_scripts'));
     }
     
@@ -95,30 +96,36 @@ class Events_Staff_Manager {
         $allowed_cities = get_user_meta($current_user->ID, 'esm_allowed_cities', true);
         $allowed_categories = get_user_meta($current_user->ID, 'esm_allowed_categories', true);
         
+        // Si no hay restricciones específicas, mostrar todos
         if (empty($allowed_cities) && empty($allowed_categories)) {
             return $where;
         }
         
         $additional_where = array();
         
-        if (!empty($allowed_cities)) {
-            $cities_placeholders = implode(',', array_fill(0, count($allowed_cities), '%s'));
-            $additional_where[] = $wpdb->prepare(
-                "EXISTS (SELECT 1 FROM {$wpdb->prefix}jet_cct_eventos e WHERE e.lead_id = l._ID AND e.ubicacion_evento IN ($cities_placeholders))",
-                $allowed_cities
-            );
+        if (!empty($allowed_cities) && is_array($allowed_cities)) {
+            $cities_in = array();
+            foreach ($allowed_cities as $city) {
+                $cities_in[] = $wpdb->prepare('%s', $city);
+            }
+            $additional_where[] = "EXISTS (SELECT 1 FROM {$wpdb->prefix}jet_cct_eventos e WHERE e.lead_id = l._ID AND e.ubicacion_evento IN (" . implode(',', $cities_in) . "))";
         }
         
-        if (!empty($allowed_categories)) {
-            $categories_placeholders = implode(',', array_fill(0, count($allowed_categories), '%s'));
-            $additional_where[] = $wpdb->prepare(
-                "EXISTS (SELECT 1 FROM {$wpdb->prefix}jet_cct_eventos e WHERE e.lead_id = l._ID AND e.categoria_listing_post IN ($categories_placeholders))",
-                $allowed_categories
-            );
+        if (!empty($allowed_categories) && is_array($allowed_categories)) {
+            $categories_in = array();
+            foreach ($allowed_categories as $category) {
+                $categories_in[] = $wpdb->prepare('%s', $category);
+            }
+            $additional_where[] = "EXISTS (SELECT 1 FROM {$wpdb->prefix}jet_cct_eventos e WHERE e.lead_id = l._ID AND e.categoria_listing_post IN (" . implode(',', $categories_in) . "))";
         }
         
         if (!empty($additional_where)) {
-            $where .= ' AND (' . implode(' OR ', $additional_where) . ')';
+            $filter_condition = '(' . implode(' OR ', $additional_where) . ')';
+            if (!empty($where)) {
+                $where .= ' AND ' . $filter_condition;
+            } else {
+                $where = $filter_condition;
+            }
         }
         
         return $where;
@@ -138,12 +145,13 @@ class Events_Staff_Manager {
     }
     
     private function should_apply_user_restrictions() {
-        if (is_admin()) {
+        // No aplicar en wp-admin real (pero sí en AJAX)
+        if (is_admin() && !wp_doing_ajax()) {
             return false;
         }
         
         $current_user = wp_get_current_user();
-        if (!in_array('ejecutivo_de_ventas', $current_user->roles)) {
+        if (!$current_user || !in_array('ejecutivo_de_ventas', $current_user->roles)) {
             return false;
         }
         
@@ -177,6 +185,22 @@ class Events_Staff_Manager {
         sort($all_cities);
         
         return $all_cities;
+    }
+    
+    public function debug_user_restrictions() {
+        $current_user = wp_get_current_user();
+        $allowed_cities = get_user_meta($current_user->ID, 'esm_allowed_cities', true);
+        $allowed_categories = get_user_meta($current_user->ID, 'esm_allowed_categories', true);
+        
+        wp_send_json_success(array(
+            'user_id' => $current_user->ID,
+            'user_roles' => $current_user->roles,
+            'allowed_cities' => $allowed_cities,
+            'allowed_categories' => $allowed_categories,
+            'should_apply' => $this->should_apply_user_restrictions(),
+            'is_ajax' => wp_doing_ajax(),
+            'is_admin' => is_admin()
+        ));
     }
     
     private function get_taxonomy_cities() {
