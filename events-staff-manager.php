@@ -92,10 +92,7 @@ class Events_Staff_Manager {
     }
     
     public function filter_leads_query($where, $args) {
-        error_log('ESM - filter_leads_query() - Ejecutando');
-        
         if (!$this->should_apply_user_restrictions()) {
-            error_log('ESM - No se aplican restricciones según should_apply_user_restrictions()');
             return $where;
         }
         
@@ -105,12 +102,8 @@ class Events_Staff_Manager {
         $allowed_cities = get_user_meta($current_user->ID, 'esm_allowed_cities', true);
         $allowed_categories = get_user_meta($current_user->ID, 'esm_allowed_categories', true);
         
-        error_log('ESM - Ciudades permitidas: ' . print_r($allowed_cities, true));
-        error_log('ESM - Categorías permitidas: ' . print_r($allowed_categories, true));
-        
         // Si no hay restricciones específicas, mostrar todos
         if (empty($allowed_cities) && empty($allowed_categories)) {
-            error_log('ESM - No hay restricciones específicas, mostrando todos los leads');
             return $where;
         }
         
@@ -123,7 +116,6 @@ class Events_Staff_Manager {
             }
             $city_condition = "EXISTS (SELECT 1 FROM {$wpdb->prefix}jet_cct_eventos e WHERE e.lead_id = l._ID AND e.ubicacion_evento IN (" . implode(',', $cities_in) . "))";
             $additional_where[] = $city_condition;
-            error_log('ESM - Condición de ciudades: ' . $city_condition);
         }
         
         if (!empty($allowed_categories) && is_array($allowed_categories)) {
@@ -133,12 +125,10 @@ class Events_Staff_Manager {
             }
             $category_condition = "EXISTS (SELECT 1 FROM {$wpdb->prefix}jet_cct_eventos e WHERE e.lead_id = l._ID AND e.categoria_listing_post IN (" . implode(',', $categories_in) . "))";
             $additional_where[] = $category_condition;
-            error_log('ESM - Condición de categorías: ' . $category_condition);
         }
         
         if (!empty($additional_where)) {
             $filter_condition = '(' . implode(' OR ', $additional_where) . ')';
-            error_log('ESM - Condición de filtro completa: ' . $filter_condition);
             
             if (!empty($where)) {
                 $where .= ' AND ' . $filter_condition;
@@ -147,7 +137,6 @@ class Events_Staff_Manager {
             }
         }
         
-        error_log('ESM - WHERE final: ' . $where);
         return $where;
     }
     
@@ -166,24 +155,15 @@ class Events_Staff_Manager {
     
     private function should_apply_user_restrictions() {
         // No aplicar en wp-admin real (pero sí en AJAX)
-        // Debug
-        error_log('ESM - is_admin(): ' . (is_admin() ? 'true' : 'false'));
-        error_log('ESM - wp_doing_ajax(): ' . (wp_doing_ajax() ? 'true' : 'false'));
-        
         if (is_admin() && !wp_doing_ajax()) {
-            error_log('ESM - No aplicando restricciones (estamos en admin y no es AJAX)');
             return false;
         }
         
         $current_user = wp_get_current_user();
-        error_log('ESM - Usuario actual: ' . $current_user->ID . ', Roles: ' . implode(',', $current_user->roles));
-        
         if (!$current_user || !in_array('ejecutivo_de_ventas', $current_user->roles)) {
-            error_log('ESM - No aplicando restricciones (usuario no es ejecutivo_de_ventas)');
             return false;
         }
         
-        error_log('ESM - Aplicando restricciones para ejecutivo_de_ventas');
         return true;
     }
     
@@ -207,16 +187,11 @@ class Events_Staff_Manager {
             ORDER BY ubicacion_evento
         ");
         
-        error_log('ESM - Ciudades disponibles en eventos: ' . print_r($cities, true));
-        
         $taxonomy_cities = $this->get_taxonomy_cities();
-        error_log('ESM - Ciudades de taxonomía: ' . print_r($taxonomy_cities, true));
         
         $all_cities = array_merge($cities, $taxonomy_cities);
         $all_cities = array_unique(array_filter($all_cities));
         sort($all_cities);
-        
-        error_log('ESM - Todas las ciudades (combinadas): ' . print_r($all_cities, true));
         
         return $all_cities;
     }
@@ -242,8 +217,6 @@ class Events_Staff_Manager {
                 $cities_in_db = $wpdb->get_col($sql);
             }
         }
-        
-        error_log('ESM - Debug: Verificando ciudades en DB que coinciden con permitidas: ' . print_r($cities_in_db, true));
         
         wp_send_json_success(array(
             'user_id' => $current_user->ID,
